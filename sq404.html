@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Singapore Airlines</title>
+    <link rel="stylesheet" href="stylesheet.css"> 
+    <link rel="icon" type="image/x-icon" href="assets/logo2.png">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; 
+            background-color: #f0f0f0;
+            overflow: hidden; 
+        }
+        #gameContainer {
+            position: relative;
+            background-image: url('assets/360_F_606544986_2zeORxAa7x0pnUdfXNlBZof4QOB7qB43 (1).jpg'); /* Ensure the path is correct */
+            background-size: cover;
+            background-position: center;
+            width: 800px; 
+            height: 200px; 
+            border: 1px solid #000;
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none; 
+            z-index: 999; 
+        }
+        .game-over h2 {
+            font-size: 36px;
+            font-family: Arial, sans-serif;
+            color: #000;
+            margin-bottom: 20px;
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            z-index: 999;
+        }
+
+
+        .start-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #032a6c;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-family: "Baker Signet Web", serif;
+            z-index: 9999;
+        }
+
+        .instructions {
+            position: absolute;
+            top: calc(100% + 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            font-family: "Baker Signet Web", serif; 
+            color: #000;
+            display: none; 
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul class="logo">
+            <li><a href="https://www.singaporeair.com/en_UK/sg/home#/book/bookflight"><img src="assets/Screen Shot 2024-07-10 at 8.15.14 PM.png" width="50%" height="50%"></a></li>
+        </ul>
+        <ul class="login">
+            <li><a href="https://www.singaporeair.com/kfLogin.form"><img src="assets/Screen Shot 2024-07-10 at 7.38.05 PM copy.png" width="40%" height="40%"></a></li>
+        </ul>
+    </nav>
+    <h1>404 ERROR — Page Not Found</h1>
+    <main>
+        <div id="gameContainer">
+            <canvas id="gameCanvas" width="800" height="200"></canvas>
+            <div class="instructions" id="instructions">Press Space to Fly</div>
+        </div>
+        <div class="button-container">
+            <a href="https://www.singaporeair.com/en_UK/sg/home#/book/bookflight" class="button">Back to homepage</a>
+        </div>
+    </main>
+    <div class="game-over" id="gameOverScreen">
+        <h2>Game Over!</h2>
+        <button onclick="restartGame()">Restart Game</button>
+    </div>
+    <button class="start-button" id="startButton" onclick="startGame()">Start Game</button>
+</div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startButton = document.getElementById('startButton');
+        const instructions = document.getElementById('instructions');
+        const beepSound = document.getElementById('beepSound');
+
+        let player, playerImage, obstacleImage, obstacles, frameCount, gameSpeed, score, gameRunning;
+
+        function init() {
+            playerImage = new Image();
+            playerImage.src = 'assets/plane.png'; 
+            obstacleImage = new Image();
+            obstacleImage.src = 'assets/building_PNG91.png'; 
+
+            player = {
+                x: 50,
+                y: canvas.height - 70, 
+                width: 70, 
+                height: 70, 
+                dy: 0,
+                gravity: 0.6,
+                jump: -10,
+                grounded: false,
+                boundingBox: {
+                    xOffset: 20, 
+                    yOffset: 10, 
+                    width: 20,   
+                    height: 20   
+                }
+            };
+
+            obstacles = [];
+            frameCount = 0;
+            gameSpeed = 3; // Initial game speed
+            score = 0;
+            gameRunning = true;
+
+            gameOverScreen.style.display = 'none'; // Hide game over screen initially
+            instructions.style.display = 'block'; // Show instructions initially
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && player.grounded && gameRunning) {
+                    player.dy = player.jump;
+                }
+                // Hide instructions after first jump
+                instructions.style.display = 'none';
+            });
+        }
+
+        // Function to update game state
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            frameCount++;
+            score = Math.floor(frameCount / 10);
+
+            // Increase game speed gradually
+            if (frameCount % 500 === 0) {
+                gameSpeed += 0.5; // Increase game speed every 500 frames
+            }
+
+            // Player gravity and jump logic
+            player.dy += player.gravity;
+            player.y += player.dy;
+
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.dy = 0;
+                player.grounded = true;
+            } else {
+                player.grounded = false;
+            }
+
+            // Spawn obstacles
+            if (frameCount % 100 === 0) {
+                obstacles.push({
+                    x: canvas.width,
+                    y: canvas.height - 60, 
+                    width: 60, 
+                    height: 60, 
+                    boundingBox: {
+                        xOffset: 20, 
+                        yOffset: 10, 
+                        width: 20,   
+                        height: 40 
+                    }
+                });
+            }
+
+            // Move obstacles
+            obstacles.forEach((obstacle, index) => {
+                obstacle.x -= gameSpeed;
+
+                // Calculate obstacle's bounding box coordinates
+                const obstacleBox = {
+                    x: obstacle.x + obstacle.boundingBox.xOffset,
+                    y: obstacle.y + obstacle.boundingBox.yOffset,
+                    width: obstacle.boundingBox.width,
+                    height: obstacle.boundingBox.height
+                };
+
+                ctx.strokeStyle = 'blue';
+                ctx.strokeRect(obstacleBox.x, obstacleBox.y, obstacleBox.width, obstacleBox.height);
+
+                // Collision detection using bounding box
+                const playerBox = {
+                    x: player.x + player.boundingBox.xOffset,
+                    y: player.y + player.boundingBox.yOffset,
+                    width: player.boundingBox.width,
+                    height: player.boundingBox.height
+                };
+
+                if (playerBox.x < obstacleBox.x + obstacleBox.width &&
+                    playerBox.x + playerBox.width > obstacleBox.x &&
+                    playerBox.y < obstacleBox.y + obstacleBox.height &&
+                    playerBox.y + playerBox.height > obstacleBox.y) {
+                    // Game over
+                    gameRunning = false;
+                    gameOverScreen.style.display = 'block'; // Show game over screen
+                }
+
+                if (obstacle.x + obstacle.width < 0) {
+                    obstacles.splice(index, 1);
+                }
+
+                
+                ctx.drawImage(obstacleImage, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+
+            
+            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+            
+            ctx.font = '24px "Baker Signet Web", serif';
+            ctx.fillStyle = '#000';
+            ctx.fillText('Score: ' + score, canvas.width - 120, 30);
+
+            if (gameRunning) {
+                requestAnimationFrame(update);
+            }
+        }
+
+        
+        function startGame() {
+            startButton.style.display = 'none'; // Hide start button
+            instructions.style.display = 'none'; // Hide instructions
+            init();
+            update(); // Start the game loop
+        }
+
+       
+        function restartGame() {
+            gameOverScreen.style.display = 'none'; // Hide game over screen
+            instructions.style.display = 'block'; // Show instructions
+            init(); // Initialize the game state
+            update(); // Start the game loop
+        }
+
+        // Start the game initially with the start button visible
+    </script>
+</body>
+</html>
